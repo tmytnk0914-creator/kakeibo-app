@@ -1,0 +1,29 @@
+# 環境変数ファイル（APIキーなど機密情報）
+.env
+.env.local
+.env.*.local
+
+# 依存関係
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# ビルド成果物
+frontend/dist/
+frontend/build/
+
+# ログ
+*.log
+npm-debug.log*
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
+
+# エディタ設定
+.vscode/
+.idea/
+
+# キャッシュ
+.cache/
+frontend/.vite/
