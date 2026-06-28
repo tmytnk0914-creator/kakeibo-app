@@ -63,3 +63,69 @@ chore:    ビルド・ツール・依存関係の変更
 - セキュリティ：SQLインジェクション・XSS等のOWASP Top 10に注意する。
 - ユーザー入力値は必ずバリデーションを行う。
 - 不要な抽象化・将来の要件への先回りはしない。
+
+---
+
+## アーキテクチャ
+
+```
+frontend/   React + Vite（UIレイヤー）
+backend/    Express + @anthropic-ai/sdk（APIレイヤー）
+```
+
+- 開発時：フロントは localhost:5173、バックは localhost:3001（Viteプロキシで中継）
+- 本番時：Expressが `frontend/dist` を静的配信。1サーバーで完結。
+- DB・認証：Supabase（PostgreSQL + Auth）。フロントから直接接続。
+- Claude APIはブラウザに秘密キーを渡さないためバックエンド経由で呼び出す。
+
+---
+
+## 開発環境の起動方法
+
+ターミナルを2つ開いて実行する。
+
+```bash
+# バックエンド（ターミナル1）
+cd backend && npm run dev
+
+# フロントエンド（ターミナル2）
+cd frontend && npm run dev
+```
+
+---
+
+## 環境変数
+
+### backend/.env（Gitに含めない）
+```
+ANTHROPIC_API_KEY=  # Anthropic Console で取得
+PORT=3001
+```
+
+### frontend/.env.local（Gitに含めない）
+```
+VITE_SUPABASE_URL=      # Supabase → Settings → API → API URL
+VITE_SUPABASE_ANON_KEY= # Supabase → Settings → API → anon/public キー
+```
+
+---
+
+## デプロイ情報
+
+- **本番URL**：https://kakeibo-app-production-11e7.up.railway.app
+- **Railwayプロジェクト**：lavish-emotion / production
+- **Supabaseプロジェクト**：kakeibo（hrgqvrhyycpghmbggrsc）
+- **デプロイ方法**：`main` ブランチへのプッシュで Railway が自動デプロイ
+- **Railwayの環境変数**：`ANTHROPIC_API_KEY` / `NODE_ENV` / `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
+
+### Supabaseの設定
+- テーブル：`expenses`（id / date / store_name / items / total_amount / created_by）
+- RLS：ログイン済み全員が閲覧可・自分のレコードのみ削除可
+- Authentication → URL Configuration → Site URL にRailwayのURLを登録済み
+
+---
+
+## 既知の注意事項
+
+- Node.js v18以降 + `@anthropic-ai/sdk` でgzipストリームが途中切断する問題あり。`defaultHeaders: { 'Accept-Encoding': 'identity' }` で回避済み（`backend/server.js`）。
+- `VITE_` プレフィックスの環境変数はビルド時にJSバンドルに埋め込まれる（ブラウザから見える）。Supabaseのanonキーは公開前提の設計のため問題ない。秘密にすべき情報はバックエンドの `.env` のみに置く。
