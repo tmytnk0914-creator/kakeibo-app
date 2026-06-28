@@ -3,58 +3,109 @@ import ReceiptUpload from './components/ReceiptUpload.jsx';
 import ExpenseList from './components/ExpenseList.jsx';
 import Charts from './components/Charts.jsx';
 import Summary from './components/Summary.jsx';
-import { loadExpenses, saveExpenses, generateId, clearExpenses } from './utils/storage.js';
+import Auth from './components/Auth.jsx';
+import { supabase } from './utils/supabase.js';
+import { loadExpenses, insertExpense, deleteExpense, clearAllExpenses } from './utils/storage.js';
 
-// アプリ全体の状態管理と画面レイアウトを担うルートコンポーネント
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [expenses, setExpenses] = useState([]);
   const [activeTab, setActiveTab] = useState('upload');
 
-  // ページ読み込み時にローカルストレージからデータを復元
+  // 認証状態の監視とセッション復元
   useEffect(() => {
-    setExpenses(loadExpenses());
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Claude APIの解析結果を受け取って支出リストに追加する
-  function handleAnalyzed(data) {
-    const newExpense = {
-      id: generateId(),
+  // ログイン後にSupabaseから支出データを取得
+  useEffect(() => {
+    if (!user) {
+      setExpenses([]);
+      return;
+    }
+    loadExpenses()
+      .then(setExpenses)
+      .catch(console.error);
+  }, [user]);
+
+  // Claude APIの解析結果をSupabaseに保存してリストに追加
+  async function handleAnalyzed(data) {
+    const expense = {
       date: data.date || null,
       storeName: data.storeName || '不明な店舗',
       items: data.items || [],
       totalAmount: data.totalAmount || 0,
     };
 
-    const updated = [newExpense, ...expenses];
-    setExpenses(updated);
-    saveExpenses(updated);
-
-    // 追加後に一覧タブへ移動
-    setActiveTab('list');
+    try {
+      const saved = await insertExpense(expense);
+      setExpenses((prev) => [saved, ...prev]);
+      setActiveTab('list');
+    } catch (err) {
+      console.error('保存エラー:', err);
+    }
   }
 
-  // 指定IDの支出を削除する
-  function handleDelete(id) {
-    const updated = expenses.filter((e) => e.id !== id);
-    setExpenses(updated);
-    saveExpenses(updated);
+  // 指定IDの支出をSupabaseから削除
+  async function handleDelete(id) {
+    try {
+      await deleteExpense(id);
+      setExpenses((prev) => prev.filter((e) => e.id !== id));
+    } catch (err) {
+      console.error('削除エラー:', err);
+    }
   }
 
-  // 全データを削除する
-  function handleClearAll() {
-    if (!window.confirm('すべてのデータを削除しますか？この操作は元に戻せません。')) return;
-    clearExpenses();
-    setExpenses([]);
+  // 自分が登録した支出を全削除
+  async function handleClearAll() {
+    if (!window.confirm('自分が登録したデータをすべて削除しますか？この操作は元に戻せません。')) return;
+    try {
+      await clearAllExpenses();
+      const updated = await loadExpenses();
+      setExpenses(updated);
+    } catch (err) {
+      console.error('全削除エラー:', err);
+    }
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setActiveTab('upload');
+  }
+
+  // 認証確認中はローディング表示
+  if (authLoading) {
+    return <div className="loading-screen">読み込み中...</div>;
+  }
+
+  // 未ログインの場合は認証画面を表示
+  if (!user) {
+    return <Auth />;
   }
 
   return (
     <div className="app">
       <header className="app-header">
-        <h1>📒 家計簿アプリ</h1>
-        <p className="app-subtitle">レシートを撮影して自動で家計を管理</p>
+        <div>
+          <h1>📒 家計簿アプリ</h1>
+          <p className="app-subtitle">レシートを撮影して自動で家計を管理</p>
+        </div>
+        <div className="header-user">
+          <span className="user-email">{user.email}</span>
+          <button className="logout-button" onClick={handleLogout}>ログアウト</button>
+        </div>
       </header>
 
-      {/* タブナビゲーション */}
       <nav className="tab-nav">
         {[
           { key: 'upload', label: '📷 読み込み' },
@@ -75,7 +126,6 @@ export default function App() {
         {activeTab === 'upload' && (
           <ReceiptUpload onAnalyzed={handleAnalyzed} />
         )}
-
         {activeTab === 'list' && (
           <>
             <Summary expenses={expenses} />
@@ -83,13 +133,12 @@ export default function App() {
             {expenses.length > 0 && (
               <div className="clear-section">
                 <button className="clear-button" onClick={handleClearAll}>
-                  すべて削除
+                  自分のデータをすべて削除
                 </button>
               </div>
             )}
           </>
         )}
-
         {activeTab === 'charts' && (
           <Charts expenses={expenses} />
         )}

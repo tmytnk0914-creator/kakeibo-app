@@ -12,6 +12,143 @@ body {
   line-height: 1.6;
 }
 
+/* ===== 認証画面 ===== */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 16px;
+}
+
+.auth-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.auth-title {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  text-align: center;
+}
+
+.auth-subtitle {
+  color: #7f8c8d;
+  text-align: center;
+  margin-top: 6px;
+  margin-bottom: 28px;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: #f5f5f5;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.auth-tab.active {
+  background: #3498db;
+  color: #fff;
+  font-weight: bold;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.auth-field input {
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.auth-field input:focus {
+  border-color: #3498db;
+}
+
+.auth-error {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  background: #fdecea;
+  border-radius: 8px;
+}
+
+.auth-message {
+  color: #27ae60;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  background: #eafaf1;
+  border-radius: 8px;
+}
+
+.auth-button {
+  padding: 13px;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 4px;
+}
+
+.auth-button:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+.auth-button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+/* ===== ローディング画面 ===== */
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7f8c8d;
+  font-size: 1rem;
+}
+
 /* ===== アプリ全体レイアウト ===== */
 .app {
   max-width: 900px;
@@ -20,18 +157,48 @@ body {
 }
 
 .app-header {
-  text-align: center;
-  padding: 32px 0 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0 16px;
 }
 
 .app-header h1 {
-  font-size: 2rem;
+  font-size: 1.8rem;
   color: #2c3e50;
 }
 
 .app-subtitle {
   color: #7f8c8d;
   margin-top: 4px;
+  font-size: 0.85rem;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+.logout-button {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid #bdc3c7;
+  border-radius: 6px;
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-button:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
 }
 
 /* ===== タブナビゲーション ===== */
