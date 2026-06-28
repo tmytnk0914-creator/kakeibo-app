@@ -3,9 +3,14 @@
   "version": "1.0.0",
   "description": "レシート読み込み家計簿Webアプリ",
   "scripts": {
-    "backend": "cd backend && npm run dev",
-    "frontend": "cd frontend && npm run dev",
-    "install:all": "cd backend && npm install && cd ../frontend && npm install"
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd backend && node server.js",
+    "install:backend": "cd backend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

@@ -3,6 +3,11 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import Anthropic from '@anthropic-ai/sdk';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { existsSync } from 'fs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -13,12 +18,25 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 最大10MB
 });
 
+// Node.js v18以降でnode-fetchのgzipストリームが途中切断する問題を回避
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  defaultHeaders: {
+    'Accept-Encoding': 'identity',
+  },
 });
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+// 開発時のみCORSを許可（本番はExpressが静的ファイルを配信するため不要）
+if (process.env.NODE_ENV !== 'production') {
+  app.use(cors({ origin: 'http://localhost:5173' }));
+}
 app.use(express.json());
+
+// 本番環境ではビルド済みフロントエンドを配信する
+const distPath = join(__dirname, '../frontend/dist');
+if (existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
 
 // レシート画像を受け取り、Claude APIで解析するエンドポイント
 app.post('/api/analyze-receipt', upload.single('receipt'), async (req, res) => {
@@ -110,6 +128,13 @@ JSONのみを返してください。説明文は不要です。`,
 app.get('/api/health', (_, res) => {
   res.json({ status: 'ok' });
 });
+
+// フロントエンドのルーティングをExpressに委譲（本番のみ）
+if (existsSync(distPath)) {
+  app.get('*', (_, res) => {
+    res.sendFile(join(distPath, 'index.html'));
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`バックエンドサーバー起動中: http://localhost:${PORT}`);
